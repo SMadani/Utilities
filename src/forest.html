@@ -1,0 +1,97 @@
+<html>
+<head>
+    <title>Forest Fire</title>
+</head>
+<body>
+    <canvas id="canvas">
+        Your browser doesn't support HTML5 Canvas.
+    </canvas>
+</body>
+
+<!-- Adapted from http://rosettacode.org/wiki/Forest_fire#JavaScript -->
+<script language="JavaScript">
+    let CANVAS = document.getElementById('canvas');
+    const
+        REFRESH_RATE = (1000/24),   //The lower the number, the faster the simulation
+        ASPECT_RATIO = 1,   //Width divided by Height
+        CANVAS_SIZE = 500,
+        Y_SCALAR = 5,
+        X_SCALAR = Y_SCALAR * ASPECT_RATIO;
+    CANVAS.height = CANVAS_SIZE;
+    CANVAS.width = canvas.height * ASPECT_RATIO;
+
+    const forest = {
+        X: CANVAS.width/X_SCALAR,
+        Y: CANVAS.width/Y_SCALAR,
+        pInit: 0.25,        //Initial fertility
+        pSpawn: 0.06,       //Birth rate
+        pBurn: 0.000008,    //Death rate
+        t: [],
+        c: ['white', 'green', 'orange'] //0 = dead, 1 = alive, 2 = burning
+    };
+    
+    function afterLoad(forest) {
+        let c = CANVAS.getContext('2d');
+        for (let i = 0; i < forest.X; i++) {
+            for (let j = 0; j < forest.Y; j++) {
+                c.fillStyle = forest.c[forest.t[i][j]];
+                c.fillRect(Y_SCALAR*j, X_SCALAR*i, Y_SCALAR*j+9, X_SCALAR*i+9);
+            }
+        }
+    }
+    
+    function doStep(forest) {
+        var to = [];
+        for (let i = 0; i < forest.Y; i++) {
+            to[i] = forest.t[i].slice(0);
+        }
+    
+        for (let i = 0; i < forest.Y; i++) {
+            for (let j = 0; j < forest.Y; j++) {
+                //For each cell...
+                switch (to[i][j]) {
+                    case 0: {   //Is dead cell, so chance of tree being spawned
+                        forest.t[i][j] = Math.random() < forest.pSpawn ? 1 : 0;
+                        break;
+                    }
+                    case 1: {   //Is alive cell, so apply rules
+                        if(
+                            ((i>0) && (2 == to[i-1][j])) ||
+                            ((i<forest.Y-1) && (2 == to[i+1][j])) ||
+                            ((j>0) && (2 == to[i][j-1])) ||
+                            ((j<forest.X-1) && (2 == to[i][j+1]))
+                        ) {
+                            forest.t[i][j] = 2;
+                        }
+                        else {
+                            forest.t[i][j] = Math.random() < forest.pBurn ? 2 : 1;
+                        }
+                        break;
+                    }
+                    case 2: {   //Is burning cell, so kill it
+                        forest.t[i][j] = 0;
+                        break;
+                    }
+                }
+            }
+        }
+    
+    }
+
+    //Initialize canvas
+    for (let i = 0; i < forest.Y; i++) {
+        forest.t[i] = [];
+        for (let j = 0; j < forest.Y; j++) {
+            forest.t[i][j] = Math.random() < forest.pInit ? 1 : 0;
+        }
+    }
+
+    //Begin simulation
+    window.setInterval(() => {
+        doStep(forest);
+        afterLoad(forest);
+    }, REFRESH_RATE);
+
+ </script>
+
+</html>
