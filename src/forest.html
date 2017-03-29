@@ -25,7 +25,7 @@
     const FOREST = {
         X: CANVAS.width/X_SCALAR,
         Y: CANVAS.width/Y_SCALAR,
-        pInit: 0.25,        //Initial fertility
+        pInit: 0.27,        //Initial fertility
         pSpawn: 0.06,       //Birth rate
         pBurn: 0.000008,    //Death rate
         t: [],
@@ -58,15 +58,15 @@
                     forest.t[i][j] = Math.random() < forest.pSpawn ? 1 : 0;
                 }
                 else if (currentCell == 1) {   //Is alive cell, so apply rules
-                    if(
+                    if( //Neighbours are burning...
                         ((i>0) && (2 == to[i-1][j])) ||
                         ((i<forest.Y-1) && (2 == to[i+1][j])) ||
                         ((j>0) && (2 == to[i][j-1])) ||
                         ((j<forest.X-1) && (2 == to[i][j+1]))
                     ) {
-                        forest.t[i][j] = 2;
+                        forest.t[i][j] = 2; //Burn this tree
                     }
-                    else {
+                    else {  //Random chance of burning
                         forest.t[i][j] = Math.random() < forest.pBurn ? 2 : 1;
                     }
                 }
@@ -75,7 +75,6 @@
                 }
             }
         }
-    
     }
 
     //Initialize canvas
