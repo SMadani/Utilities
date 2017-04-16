@@ -4,7 +4,7 @@
 </head>
 <body>
     <canvas id="canvas">
-        Your browser doesn't support HTML5 Canvas.
+        Your browser doesn'cells support HTML5 Canvas.
     </canvas>
     <h3>Generation: <span id="gencount"></span></h3>
 </body>
@@ -14,10 +14,10 @@
     const
         CANVAS = document.getElementById('canvas'),
         GEN_ELEMENT = document.getElementById('gencount'),
-        REFRESH_RATE = 1000/24,   //The lower the number, the faster the simulation - increase to improve performance
-        ASPECT_RATIO = 1/1,       //Width divided by Height
-        CANVAS_SIZE = 512,        //Size of display area (in pixels)
-        Y_SCALAR = 8,             //Smaller number = higher density (more trees) - increase to improve performance
+        REFRESH_RATE = 1000/12,   //The lower the number, the faster the simulation - increase to improve performance
+        ASPECT_RATIO = 3/2,       //Width divided by Height
+        CANVAS_SIZE = 480,        //Size of display area (in pixels)
+        Y_SCALAR = 4,             //Smaller number = higher density (more trees) - increase to improve performance
         X_SCALAR = Y_SCALAR * ASPECT_RATIO;
     CANVAS.height = CANVAS_SIZE;
     CANVAS.width = canvas.height * ASPECT_RATIO;
@@ -29,18 +29,19 @@
         state: ['White', 'Green', 'DarkOrange'], //0 = Dead, 1 = Alive, 2 = Burning
         X: CANVAS.width/X_SCALAR,
         Y: CANVAS.height/Y_SCALAR,
-        X_fill: [],
-        Y_fill: [],
-        t: []
-    };
+        X_fill: [],         //Pre-computed width canvas scale
+        Y_fill: [],         //Pre-computed height canvas scale
+        cells: []           //Cells
+    }; 
 
     //Display results
     function afterLoad(forest) {
         let c = CANVAS.getContext('2d');
         for (let i = 0; i < forest.X; i++) {
+            const x = forest.X_fill[i];
             for (let j = 0; j < forest.Y; j++) {
-                c.fillStyle = forest.state[forest.t[i][j]];
-                const x = forest.X_fill[i], y = forest.Y_fill[j];
+                c.fillStyle = forest.state[forest.cells[i][j]];
+                const y = forest.Y_fill[j];
                 c.fillRect(x,y,x,y);
             }
         }
@@ -50,7 +51,7 @@
     function doStep(forest) {
         let to = [];
         for (let i = 0; i < forest.X; i++) {
-            to[i] = forest.t[i].slice(0);
+            to[i] = forest.cells[i].slice(0);
         }
     
         //For each cell...
@@ -58,7 +59,7 @@
             for (let j = 0; j < forest.Y; j++) {
                 const currentCell = to[i][j];
                 if (currentCell == 0) {   //Is dead cell, so chance of tree being spawned
-                    forest.t[i][j] = Math.random() < forest.pSpawn ? 1 : 0;
+                    forest.cells[i][j] = Math.random() < forest.pSpawn ? 1 : 0;
                 }
                 else if (currentCell == 1) {   //Is alive cell, so apply rules
                     if( //Neighbours are burning...
@@ -67,14 +68,14 @@
                         ((j>0) && (2 == to[i][j-1])) ||
                         ((j<forest.X-1) && (2 == to[i][j+1]))
                     ) {
-                        forest.t[i][j] = 2; //Burn this tree
+                        forest.cells[i][j] = 2; //Burn this tree
                     }
                     else {  //Random chance of burning
-                        forest.t[i][j] = Math.random() < forest.pBurn ? 2 : 1;
+                        forest.cells[i][j] = Math.random() < forest.pBurn ? 2 : 1;
                     }
                 }
                 else {   //Is burning cell, so kill it
-                    forest.t[i][j] = 0;
+                    forest.cells[i][j] = 0;
                 }
             }
         }
@@ -83,10 +84,10 @@
     //Initialize canvas
     for (let i = 0; i < FOREST.X; i++) {
         FOREST.X_fill[i] = X_SCALAR*i;
-        FOREST.t[i] = [];
+        FOREST.cells[i] = [];
         for (let j = 0; j < FOREST.Y; j++) {
             FOREST.Y_fill[j] = Y_SCALAR*j;
-            FOREST.t[i][j] = Math.random() < FOREST.pInit ? 1 : 0;
+            FOREST.cells[i][j] = Math.random() < FOREST.pInit ? 1 : 0;
         }
     }
     
