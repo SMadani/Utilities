@@ -23,6 +23,7 @@
 
 3) Add the remote repository for the branch
 	git remote add forkrepo <fork url>
+	
 4) Set the remote repository you're going to upload to
 	git branch --set-upstream-to=fork/master
 
