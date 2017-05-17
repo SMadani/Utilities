@@ -1,0 +1,50 @@
+# How to set up a repo where there are different remotes for each branch. For example:
+# The main project's origin/master - we'll call it "origin".
+# The sub-project is a branch of origin - we'll call it "fork".
+# If you need to reset your fork repository's history to a blank commit, do the following steps:
+
+	1) Create a new folder and cd to it
+	2) git init
+	3) Create a blank text file in that folder
+	4) git add .
+	5) git commit -m "Reset repo"
+	6) git remote add origin <fork url>
+	7) git push -u --force origin master
+	8) Delete the folder you created
+
+
+# Here are the main steps:
+
+1) Clone the main project repository:
+	git clone <origin url>
+
+2) Create and switch to a new branch:
+	git checkout -b forkbranch
+
+3) Add the remote repository for the branch
+	git remote add forkrepo <fork url>
+4) Set the remote repository you're going to upload to
+	git branch --set-upstream-to=fork/master
+
+5) Confirm that the following outputs "forkrepo/master": 
+	git rev-parse --abbrev-ref --symbolic-full-name @{u}
+
+6) Set the default push branch to be the same as the tracking (in this case, it will be master)
+	git config push.default upstream
+
+7) If you have already initialized your fork repository, you need to get the files first.
+	git fetch forkrepo master
+
+8) This is the crucial step, as it allows you to merge your fork repository with the main project's repository
+	git pull --allow-unrelated-histories
+
+9) Add the files from the main project to your commit
+	git commit -m "Original, unmodified files"
+
+9) This will upload all the files to your fork repository
+	git push --repo=forkrepo
+
+10) Confirm that the following outputs "should output: On branch forkbranch Your branch is up-to-date with 'forkrepo/master'. nothing to commit, working tree clean"
+	git status
+
+	
