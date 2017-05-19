@@ -48,4 +48,6 @@
 10) Confirm that the following outputs "On branch forkbranch Your branch is up-to-date with 'forkrepo/master'. nothing to commit, working tree clean"
 	git status
 
+11) Set the default push to your fork repository
+	git config remote.pushDefault forkrepo
 	
