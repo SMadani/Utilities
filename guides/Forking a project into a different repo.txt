@@ -25,7 +25,7 @@
 	git remote add forkrepo <fork url>
 	
 4) Set the remote repository you're going to upload to
-	git branch --set-upstream-to=fork/master
+	git branch --set-upstream-to=forkrepo/master
 
 5) Confirm that the following outputs "forkrepo/master": 
 	git rev-parse --abbrev-ref --symbolic-full-name @{u}
