@@ -6,7 +6,7 @@ class TextConfig
 {
 	def Fields = []
     private def raw = "", dir, fconn
-    private static final def n = System.getProperty ("line.separator")
+    public static final def LINE_SEPARATOR = System.getProperty ("line.separator")
 
     TextConfig() {}
 
@@ -82,7 +82,7 @@ class TextConfig
         {
             this.update()
             def x = 0
-            while (raw.indexOf(n, x) >= 0)
+            while (raw.indexOf(LINE_SEPARATOR, x) >= 0)
             {
                 if (raw.indexOf(':', x) < 1)
                     break
@@ -90,7 +90,7 @@ class TextConfig
                     ++x
                 def field = raw.substring(x, raw.indexOf(':', x))
                 Fields?.add(field)
-                x += raw.indexOf(n, x)
+                x += raw.indexOf(LINE_SEPARATOR, x)
             }
         }
         else
@@ -142,7 +142,7 @@ class TextConfig
             String line;
             raw = ""
             while ((line = bfr.readLine()) != null)
-                raw += (line+n);
+                raw += (line+LINE_SEPARATOR);
             bfr.close()
 		}
     }
@@ -368,7 +368,7 @@ class TextConfig
             return null
         else
             start += field.length()+1
-        def end = raw.indexOf (n, start)
+        def end = raw.indexOf (LINE_SEPARATOR, start)
         if (end < 0)
             raw.substring (start)
         else
@@ -381,17 +381,17 @@ class TextConfig
         if (start < 0)
         {
             if (!raw.isEmpty())
-                raw += n
-            raw += "$field: $n"
+                raw += LINE_SEPARATOR
+            raw += "$field: $LINE_SEPARATOR"
             start = raw.indexOf(field)
             Fields.add(field)
         }
         start += field.length()+2
-        def end = raw.indexOf (n,start)
+        def end = raw.indexOf (LINE_SEPARATOR,start)
         if (end < start)
         {
-            raw += n
-            end = raw.indexOf (n,start)
+            raw += LINE_SEPARATOR
+            end = raw.indexOf (LINE_SEPARATOR,start)
         }
         def before = raw.substring (0, start)
         def after = raw.substring (end, raw.length())
@@ -424,7 +424,7 @@ class TextConfig
             lineNumber = 1
         assert (lineNumber <= numberOfLines && lineNumber > 0 && position <= readLine(lineNumber).length())
         for (it in (1..lineNumber))
-            index = raw.indexOf(n, index)
+            index = raw.indexOf(LINE_SEPARATOR, index)
         index += position
         if (index > raw.length())
             index = raw.length()
@@ -447,13 +447,13 @@ class TextConfig
     def insertNewLines (int lines)
     {
         for (it in (0..lines))
-            append(n)
+            append(LINE_SEPARATOR)
     }
 
     def insertNewLineAt (int lineNumber)
     {
         if (lineNumber <= numberOfLines)
-            append(n, lineNumber)
+            append(LINE_SEPARATOR, lineNumber)
         else
             insertNewLines(1)
     }
@@ -486,30 +486,28 @@ class TextConfig
             fheader += "$field,"
             content += "${readValue(field)},"
         }
-        fheader+n+content
+        fheader+LINE_SEPARATOR+content
     }
 
-    String find (String expr, int occurN, int after) throws StringIndexOutOfBoundsException
-    {
+    String find (String expr, int occurN, int after) throws StringIndexOutOfBoundsException {
         def srch = "", index = 0
-        for (i in 0..<occurN)
-        {
-            index = raw.indexOf(expr,index)
+        for (i in 0..<occurN) {
+            index = raw.indexOf(expr, index)
             if (index < 0)
                 break
             index += expr.length()
-            srch = raw.substring (index, index+after)
+            srch = raw.substring(index, index + after)
         }
         return srch
     }
 
-    Set<String> find (Pattern regex)
+    List<String> find (Pattern regex)
     {
-        def result = new HashSet<String>()
+        def result = new ArrayList<String>()
         def match = regex.matcher(raw)
         while (match.find())
             result.add (raw.substring(match.start(), match.end()))
-        result as Set<String>
+        result as List<String>
         //regex.matcher(raw).findAll().toSet()
     }
 
@@ -542,6 +540,16 @@ class TextConfig
         def i = fileName.lastIndexOf('.')
         def p = Math.max(fileName.lastIndexOf('/'), fileName.lastIndexOf('\\'))
         return i > p ? fileName.substring(i+1) : ""/*fileName.substring(fileName.lastIndexOf('.'), fileName.length())*/
+    }
+
+    Path getPath()
+    {
+        dir
+    }
+
+    String toString()
+    {
+        raw
     }
 
     String getExtension()
