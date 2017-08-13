@@ -7,6 +7,7 @@ class WebPageReader
 	private static final def n = System.getProperty ("line.separator")
 	public static Pattern websiteRegex = ~/(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/
     public static Pattern emailRegex = ~/[_A-Za-z0-9-]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9\-_]+\.([A-Za-z]{2,3})(\.[A-Za-z]{2})?/
+    public static Pattern nameRegex = ~/^([ \u00c0-\u01ffa-zA-Z'\-])+\u0024/
 
     WebPageReader (dir) throws MalformedURLException
 	{

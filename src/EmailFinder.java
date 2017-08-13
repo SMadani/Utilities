@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -17,13 +18,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 public class EmailFinder implements Runnable {
     public static void main(String[] args) {
-        Function<TextConfig, List<String>> pm = textConf -> {
-/*            List<String> lines = new ArrayList<>();
-            lines.add("Name, Affiliation, E-mail address");
-            lines.add(textConf.toString());
-            return lines;*/
-            return textConf.find(WebPageReader.emailRegex);
-        };
+        Function<TextConfig, List<String>> pm = textConf -> textConf.find(WebPageReader.emailRegex);
         new EmailFinder(pm, "Mailing_list", "csv").run();
         System.exit(0);
     }
