@@ -4,8 +4,8 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import javax.swing.*;
@@ -18,20 +18,26 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 public class EmailFinder implements Runnable {
     public static void main(String[] args) {
-        Function<TextConfig, List<String>> pm = textConf -> textConf.find(WebPageReader.emailRegex);
-        new EmailFinder(pm, "Mailing_list", "csv").run();
+        new EmailFinder("Mailing_list", "csv", EMAIL_SPLITTER).run();
         System.exit(0);
     }
 
-    final Function<TextConfig, ? extends List<String>> splitter;
+    static final BiFunction<TextConfig, Pattern, List<String>> FINDER = TextConfig::find;
+
+    static final Function<TextConfig, List<String>>
+            EMAIL_SPLITTER = textConf -> FINDER.apply(textConf, WebPageReader.EMAIL_REGEX),
+            NAME_SPLITTER = textConf -> FINDER.apply(textConf, WebPageReader.NAME_REGEX);
+
+    final Function<TextConfig, List<String>>[] splitters;
     final TextConfig record;
     final JFrame window;
     final JProgressBar progress;
     int pv = 0;
 
-    EmailFinder(Function<TextConfig, ? extends List<String>> patternMatcher, String fileName, String fileExt) {
-        this.splitter = patternMatcher;
+    @SafeVarargs
+    EmailFinder(String fileName, String fileExt, Function<TextConfig, List<String>>... patternMatchers) {
         record = new TextConfig(fileName+'.'+fileExt);
+        this.splitters = patternMatchers.length > 0 ? patternMatchers : new Function[]{EMAIL_SPLITTER};
         window = new JFrame("E-mail Finder");
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -70,39 +76,31 @@ public class EmailFinder implements Runnable {
                     System.exit(0);
             }
 
-            progress.setString("Writing to file...");
-            progress.setValue(++pv);
-            record.save();
-            showMessageDialog(window, "Done! You can find the results on your desktop", "Finished search", INFORMATION_MESSAGE);
+
+            if (!record.toString().isEmpty()) {
+                progress.setString("Writing to file...");
+                progress.setValue(++pv);
+                record.save();
+                showMessageDialog(window, "Done! You can find the results on your desktop", "Finished search", INFORMATION_MESSAGE);
+            }
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            showMessageDialog(window, ex.getMessage(), ex.getClass().getName(), ERROR_MESSAGE);
+            showMessageDialog(window, ex.getClass().getName()+": "+ex.getMessage(), "Oops! Something went wrong...", ERROR_MESSAGE);
         }
     }
 
     private void extractFromFile() {
         Set<File> pages = getFiles();
         if (pages.size() < 1)
-            System.exit(0);
+            return;
 
         progress.setMaximum(pages.size() + 4);
         for (File page : pages) {
             progress.setValue(++pv);
             String mult = pages.size() > 1 ? "" + pv : "";
             progress.setString("Accessing file " + mult + "...");
-            TextConfig editor = accessHandler(page);
-            progress.setString("Searching for e-mail addresses...");
-            progress.setValue(++pv);
-            Collection<String> address = splitter.apply(editor);
-            progress.setString(address.size() > 0 ? "Saving addresses..." : "No addresses found for this file!");
-            progress.setValue(++pv);
-            if (pages.size() > 1) {
-                record.append("For file \"" + page.getName() + "\":");
-                record.insertNewLines(1);
-            }
-            address.forEach(email -> record.append(email + TextConfig.LINE_SEPARATOR));
-            record.insertNewLines(2);
+            findAndWrite(accessHandler(page), "For file \"" + page.getName() + "\":");
         }
     }
 
@@ -115,15 +113,7 @@ public class EmailFinder implements Runnable {
             progress.setString("Connecting to site " + mult + "...");
             try {
                 site.read();
-                progress.setString("Searching for e-mail addresses...");
-                progress.setValue(++pv);
-                Collection<String> address = splitter.apply(site.getEditor());
-                progress.setString(address.size() > 0 ? "Saving addresses..." : "No addresses found for this site!");
-                progress.setValue(++pv);
-                record.append("For site \"" + site.getURL() + "\":");
-                record.insertNewLines(1);
-                address.forEach(email -> record.append(email + ", "));
-                record.insertNewLines(2);
+                findAndWrite(site.getEditor(), "For site \"" + site.getURL() + "\":");
             }
             catch (IOException ioe) {
                 showMessageDialog(window, ioe.getMessage(), "Could not read site!", ERROR_MESSAGE);
@@ -137,7 +127,8 @@ public class EmailFinder implements Runnable {
         TextConfig editor = accessHandler(file);
         progress.setString("Finding URLs...");
         progress.setValue(++pv);
-        Collection<String> links = editor.find(WebPageReader.websiteRegex);
+        assert editor != null;
+        Collection<String> links = editor.find(WebPageReader.WEBSITE_REGEX);
         progress.setMaximum((links.size() * 3) + 2);
         for (String link : links) {
             progress.setValue(++pv);
@@ -147,22 +138,39 @@ public class EmailFinder implements Runnable {
                 connector = new WebPageReader(link);
                 connector.read();
             }
-            catch (IOException e) {
+            catch (IOException iox) {
                 progress.setString("Could not read web page!");
                 pv += 2;
                 progress.setValue(pv);
                 continue;
             }
-            progress.setString("Searching for e-mail addresses...");
-            progress.setValue(++pv);
-            Collection<String> address = splitter.apply(connector.getEditor());
-            progress.setString(address.size() > 0 ? "Saving addresses..." : "No addresses found for this file!");
-            progress.setValue(++pv);
-            record.append("For site \"" + link + "\":");
-            record.insertNewLines(1);
-            address.forEach(email -> record.append(email + ", "));
-            record.insertNewLines(2);
+            findAndWrite(connector.getEditor(), String.format("For site \"%s\":", link));
         }
+    }
+
+    private void findAndWrite(TextConfig textConf, String before) {
+        appendResults(before, search(textConf));
+    }
+
+    private List<String> search(TextConfig textConf) {
+        progress.setString("Searching...");
+        progress.setValue(++pv);
+        List<String> results = new ArrayList<>();
+        for (Function<TextConfig, List<String>> splitter : splitters) {
+            results.addAll(splitter.apply(textConf));
+        }
+        progress.setString(results.size() > 0 ? "Saving..." : "None found for this document!");
+        return results;
+    }
+
+    private void appendResults(String before, List<String> lines) {
+        progress.setValue(++pv);
+        if (before != null) {
+            record.append(before);
+        }
+        record.insertNewLines(1);
+        lines.forEach(email -> record.append(email + ", " + TextConfig.LINE_SEPARATOR));
+        record.insertNewLines(2);
     }
 
     static TextConfig getAccess(File page) throws IOException {

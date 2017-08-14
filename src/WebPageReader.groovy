@@ -5,9 +5,9 @@ class WebPageReader
 	private String raw
     private final URL site
 	private static final def n = System.getProperty ("line.separator")
-	public static Pattern websiteRegex = ~/(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/
-    public static Pattern emailRegex = ~/[_A-Za-z0-9-]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9\-_]+\.([A-Za-z]{2,3})(\.[A-Za-z]{2})?/
-    public static Pattern nameRegex = ~/^([ \u00c0-\u01ffa-zA-Z'\-])+\u0024/
+	public static Pattern WEBSITE_REGEX = ~/(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/
+    public static Pattern EMAIL_REGEX = ~/[_A-Za-z0-9-]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9\-_]+\.([A-Za-z]{2,3})(\.[A-Za-z]{2})?/
+    public static Pattern NAME_REGEX = ~/([\u00c0-\u01ffa-zA-Z'\-])+/
 
     WebPageReader (dir) throws MalformedURLException
 	{
@@ -43,7 +43,7 @@ class WebPageReader
 
     static boolean isValidURL (String urs)
     {
-        urs ==~ websiteRegex//~/(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/
+        urs ==~ WEBSITE_REGEX//~/(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/
     }
 
     long getOptimalDelay (long step, int attempts)
