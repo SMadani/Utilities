@@ -39,7 +39,7 @@ public class BinarySearch implements Runnable {
     }
 
     protected int isBadRecursive(boolean[] arr, int currentIndex) {
-        if (arr.length == 1) return arr[0];
+        if (arr.length == 1) return currentIndex;
         int midIndex = arr.length/2;
         boolean midValue = arr[midIndex];
         boolean[] next;
